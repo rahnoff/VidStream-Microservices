@@ -18,63 +18,78 @@ import java.util.UUID;
 @Validated
 @Controller("/api/v1")
 public class VideoController {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(VideoController.class);
-
+    
     private final VideoService videoService;
-
+    
     public VideoController(VideoService videoService) {
         this.videoService = videoService;
     }
-
+    
     // Endpoint to find all videos by a user
     @Get(value = "/users/{userId}/videos/")
-    public HttpResponse<Iterable<VideoDTO>> findAllByUser(
-            @PathVariable(value = "userId") @NotEmpty String userId) {
+    public HttpResponse<Iterable<VideoDTO>> findAllByUser(@PathVariable(value = "userId")
+                                                          @NotEmpty
+                                                          String userId) {
         LOGGER.info("Fetching all videos for user ID: {}", userId);
+        
         List<VideoDTO> videos = videoService.getUserPosts(userId);
-
-        if(videos.isEmpty()) {
+        
+        if (videos.isEmpty()) {
             LOGGER.info("No videos found for user ID: {}", userId);
+            
             return HttpResponse.notFound();
         }
-
+        
         return HttpResponse.ok(videos);
     }
 
     // Endpoint to find a specific video by ID
     @Get(value = "/users/{userId}/videos/{videoId}")
-    public HttpResponse<VideoDTO> findById(
-            @PathVariable(value = "userId") @NotEmpty String userId,
-            @PathVariable(value = "videoId") @NotEmpty String videoId) {
+    public HttpResponse<VideoDTO> findById(@PathVariable(value = "userId")
+                                           @NotEmpty
+                                           String userId,
+                                           @PathVariable(value = "videoId")
+                                           @NotEmpty
+                                           String videoId) {
         LOGGER.info("Fetching video with ID: {} for user ID: {}", videoId, userId);
+        
         Optional<VideoDTO> e = videoService.fetch(userId, UUID.fromString(videoId));
 
         if (e.isEmpty()) {
             LOGGER.info("Video with ID: {} not found for user ID: {}", videoId, userId);
+            
             return HttpResponse.notFound();
         }
 
         return HttpResponse.ok(e.get());
     }
-
+    
     // Endpoint to create a new video
     @Post(value = "/users/{userId}/videos/")
-    public HttpResponse<VideoDTO> create(
-            @PathVariable(value = "userId") @NotEmpty String userId,
-            @Body @NotNull VideoDTO video) {
+    public HttpResponse<VideoDTO> create(@PathVariable(value = "userId")
+                                         @NotEmpty
+                                         String userId,
+                                         @Body
+                                         @NotNull
+                                         VideoDTO video) {
         LOGGER.info("Creating new video for user ID: {}", userId);
-        if(video.getVideoId() != null) {
+        
+        if (video.getVideoId() != null) {
             Optional<VideoDTO> e = videoService.fetch(userId, video.getVideoId());
 
             if (e.isPresent()) {
                 LOGGER.info("Video with ID: {} already exists for user ID: {}", video.getVideoId(), userId);
+                
                 return HttpResponse.badRequest();
             }
+            
         }
 
         video.setUserId(userId);
+        
         video = videoService.post(video);
+        
         return HttpResponse.created(video);
     }
 
